@@ -868,6 +868,37 @@ public class AnnotationsDataSourceTest {
     Assert.assertEquals(readBuilding, readRoom.getBuilding());
   }
 
+  @Test
+  public void writeOneWayRelation() throws Exception {
+    DataStore<Building> buildingStore = InMemoryDataStore.createInMemory(Building.class, true);
+    DataStore<Closet> closetStore = InMemoryDataStore.createInMemory(Closet.class, true);
+
+    EdmEntitySet buildingsEntitySet = createMockedEdmEntitySet("Buildings");
+    EdmEntitySet closetsEntitySet = createMockedEdmEntitySet("Closets");
+
+    Building building = new Building();
+    building.setName("Main Building");
+    Building createdBuilding = buildingStore.create(building);
+
+    Closet closet = new Closet(12, "1A");
+    closet.setFloorLevel(1);
+    closetStore.create(closet);
+
+    Map<String, Object> targetEntityKeyValues = new HashMap<>();
+    targetEntityKeyValues.put("Id", 12);
+
+    datasource.writeRelation(buildingsEntitySet, building, closetsEntitySet, targetEntityKeyValues);
+
+    Building readBuilding = buildingStore.read(createdBuilding);
+    Closet readCloset = closetStore.read(new Closet(12, ""));
+
+    Assert.assertEquals("12", readCloset.getId());
+    Assert.assertEquals("1A", readCloset.getName());
+    Assert.assertEquals(1, readCloset.getFloorLevel());
+    Assert.assertEquals(readBuilding, readCloset.getBuilding());
+
+  }
+
   private EdmEntitySet createMockedEdmEntitySet(final String entitySetName) throws ODataException {
     return createMockedEdmEntitySet(edmProvider, entitySetName);
   }
