@@ -288,16 +288,13 @@ public class DataSourceProcessorTest {
   }
 
   @Test
-  public void createSimpleEntity() throws Exception {
+  public void postSimpleEntity() throws Exception {
 
     PostUriInfo uriInfo = createMockedPostUriInfo("Buildings");
     EdmEntitySet entitySet = uriInfo.getTargetEntitySet();
     InputStream buildingContent = new StringHelper.Stream(
         "{\"Id\":\"01\",\"Name\":\"Main\"}",
         "UTF-8").asStream();
-    Building expected = new Building();
-    expected.setId("01");
-    expected.setName("Main");
 
     Mockito.when(mockedDataSource.newDataObject(entitySet)).thenReturn(new Building());
     Mockito.when(mockedDataSource.createData(Mockito.eq(entitySet), Mockito.any(Building.class)))
@@ -309,10 +306,8 @@ public class DataSourceProcessorTest {
           }
         });
 
-    Mockito.when(mockedDataSource.createData(entitySet, expected)).thenReturn(expected);
-
     String jsonContentType = ContentType.APPLICATION_JSON.toContentTypeString();
-    ODataResponse response = dataSourceProcessor.createEntity(uriInfo, buildingContent, jsonContentType, jsonContentType);
+    dataSourceProcessor.createEntity(uriInfo, buildingContent, jsonContentType, jsonContentType);
 
     ArgumentCaptor<Building> argument = ArgumentCaptor.forClass(Building.class);
     Mockito.verify(mockedDataSource).createData(Mockito.eq(entitySet), argument.capture());
