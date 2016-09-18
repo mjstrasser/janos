@@ -26,6 +26,8 @@ import org.apache.olingo.odata2.api.uri.UriInfo;
 import org.apache.olingo.odata2.api.uri.expression.FilterExpression;
 import org.apache.olingo.odata2.api.uri.expression.OrderByExpression;
 import org.apache.olingo.odata2.api.uri.info.GetEntitySetUriInfo;
+import org.apache.olingo.odata2.api.uri.info.PostUriInfo;
+import org.apache.olingo.odata2.core.commons.ContentType;
 import org.apache.olingo.odata2.core.uri.UriParserImpl;
 import org.apache.olingo.odata2.janos.processor.api.data.ReadOptions;
 import org.apache.olingo.odata2.janos.processor.api.data.ReadResult;
@@ -42,8 +44,12 @@ import org.apache.olingo.odata2.testutil.helper.StringHelper;
 import org.apache.olingo.odata2.testutil.mock.EdmMock;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -281,16 +287,62 @@ public class DataSourceProcessorTest {
     Assert.assertEquals("Room with id: 9", parsedResults.get(9).get("Name"));
   }
 
+  @Test
+  public void createSimpleEntity() throws Exception {
+
+    PostUriInfo uriInfo = createMockedPostUriInfo("Buildings");
+    EdmEntitySet entitySet = uriInfo.getTargetEntitySet();
+    InputStream buildingContent = new StringHelper.Stream(
+        "{\"Id\":\"01\",\"Name\":\"Main\"}",
+        "UTF-8").asStream();
+    Building expected = new Building();
+    expected.setId("01");
+    expected.setName("Main");
+
+    Mockito.when(mockedDataSource.newDataObject(entitySet)).thenReturn(new Building());
+    Mockito.when(mockedDataSource.createData(Mockito.eq(entitySet), Mockito.any(Building.class)))
+        .then(new Answer<Building>() {
+          @Override
+          public Building answer(InvocationOnMock invocation) throws Throwable {
+            Object[] args = invocation.getArguments();
+            return (Building) args[1];
+          }
+        });
+
+    Mockito.when(mockedDataSource.createData(entitySet, expected)).thenReturn(expected);
+
+    String jsonContentType = ContentType.APPLICATION_JSON.toContentTypeString();
+    ODataResponse response = dataSourceProcessor.createEntity(uriInfo, buildingContent, jsonContentType, jsonContentType);
+
+    ArgumentCaptor<Building> argument = ArgumentCaptor.forClass(Building.class);
+    Mockito.verify(mockedDataSource).createData(Mockito.eq(entitySet), argument.capture());
+    Assert.assertEquals("01", argument.getValue().getId());
+    Assert.assertEquals("Main", argument.getValue().getName());
+
+  }
+
   private UriInfo createMockedUriInfo(String entitySetName) throws ODataException {
-    Edm edm = EdmMock.createMockEdm();
     UriInfo uriInfo = Mockito.mock(UriInfo.class);
-    EdmEntitySet rooms = EdmMock.getEntitySet(edm, entitySetName);
-    Mockito.when(uriInfo.getTargetEntitySet()).thenReturn(rooms);
+    Edm edm = EdmMock.createMockEdm();
+    EdmEntitySet entitySet = EdmMock.getEntitySet(edm, entitySetName);
+    Mockito.when(uriInfo.getTargetEntitySet()).thenReturn(entitySet);
     ODataContext context = Mockito.mock(ODataContext.class);
     PathInfo pathInfo = Mockito.mock(PathInfo.class);
     Mockito.when(context.getPathInfo()).thenReturn(pathInfo);
     dataSourceProcessor.setContext(context);
     return uriInfo;
+  }
+
+  private PostUriInfo createMockedPostUriInfo(String entitySetName) throws ODataException {
+    PostUriInfo postUriInfo = Mockito.mock(PostUriInfo.class);
+    Edm edm = EdmMock.createMockEdm();
+    EdmEntitySet entitySet = EdmMock.getEntitySet(edm, entitySetName);
+    Mockito.when(postUriInfo.getTargetEntitySet()).thenReturn(entitySet);
+    ODataContext context = Mockito.mock(ODataContext.class);
+    PathInfo pathInfo = Mockito.mock(PathInfo.class);
+    Mockito.when(context.getPathInfo()).thenReturn(pathInfo);
+    dataSourceProcessor.setContext(context);
+    return postUriInfo;
   }
 
   private List<Room> createRooms(int startId, int amount) {
