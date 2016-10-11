@@ -580,7 +580,7 @@ public class AnnotationsDataSourceTest {
   }
 
   @Test
-  public void createSimpleEntityWithDuplicateKey() throws Exception {
+  public void duplicateKeyShouldUpdateObject() throws Exception {
     EdmEntitySet edmEntitySet = createMockedEdmEntitySet("Buildings");
     AnnotationHelper ah = new AnnotationHelper();
 
@@ -597,14 +597,8 @@ public class AnnotationsDataSourceTest {
     Map<String, Object> keys42 = new HashMap<>();
     keys42.put("Id", "42");
     Building read42 = (Building) datasource.readData(edmEntitySet, keys42);
-    Assert.assertEquals("Common Building", read42.getName());
+    Assert.assertEquals("Duplicate Building", read42.getName());
     Assert.assertEquals("42", read42.getId());
-
-    Map<String, Object> keys = new HashMap<>();
-    keys.put("Id", "1");
-    Building read = (Building) datasource.readData(edmEntitySet, keys);
-    Assert.assertEquals("Duplicate Building", read.getName());
-    Assert.assertEquals("1", read.getId());
   }
 
   @Test
@@ -688,55 +682,6 @@ public class AnnotationsDataSourceTest {
     Photo readPhoto = (Photo) photos.getFirst();
     Assert.assertEquals(automaticNameKeyValue + ":" + typeKeyValue,
             readPhoto.getName() + ":" + readPhoto.getType());
-  }
-
-  @Test
-  public void ensureTwoKeyEntityKeysAreUnique() throws Exception {
-    EdmEntitySet edmEntitySet = createMockedEdmEntitySet("Photos");
-
-    final String nameKeyName = "Name";
-    final String typeKeyName = "ImageFormat";
-    final String nameKeyValue = "Big Picture";
-    final String typeKeyValue = "PNG";
-
-    final String generatedValue1 = "1";
-    final String generatedValue2 = "2";
-
-    final String imageUri1 = "https://localhost/big_picture.png";
-    final String imageUri2 = "https://localhost/bigger_picture.png";
-
-    // Add photo 1
-    Photo photo1 = new Photo();
-    photo1.setName(nameKeyValue);
-    photo1.setType(typeKeyValue);
-    photo1.setImageUri(imageUri1);
-    photo1.setImageType("image/png");
-    datasource.createData(edmEntitySet, photo1);
-
-    // Add photo 2 (same key values)
-    Photo photo2 = new Photo();
-    photo2.setName(nameKeyValue);
-    photo2.setType(typeKeyValue);
-    photo2.setImageUri("https://localhost/bigger_picture.png");
-    photo2.setImageType("image/png");
-    datasource.createData(edmEntitySet, photo2);
-
-    ReadResult photos = datasource.readData(edmEntitySet, ReadOptions.none());
-    Assert.assertEquals(2, photos.getResult().size());
-
-    // Check photo 1 has specified key values.
-    Map<String, Object> keys1 = new HashMap<String, Object>();
-    keys1.put(nameKeyName, nameKeyValue);
-    keys1.put(typeKeyName, typeKeyValue);
-    Photo readPhoto = (Photo) datasource.readData(edmEntitySet, keys1);
-    Assert.assertEquals(imageUri1, readPhoto.getImageUri());
-
-    // Check photo 2 has generated key values.
-    Map<String, Object> keys2 = new HashMap<String, Object>();
-    keys2.put(nameKeyName, generatedValue1);
-    keys2.put(typeKeyName, generatedValue2);
-    Photo readPhoto2 = (Photo) datasource.readData(edmEntitySet, keys2);
-    Assert.assertEquals(imageUri2, readPhoto2.getImageUri());
   }
 
   @Test

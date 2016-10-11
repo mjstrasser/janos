@@ -118,17 +118,19 @@ public class InMemoryDataStore<T> implements DataStore<T> {
     return create(object, keyElement);
   }
 
-    private T create(final T object, final KeyElement keyElement) throws DataStoreException {
-      synchronized (dataStore) {
-        final boolean replaceKeys = dataStore.containsKey(keyElement);
-        if (keyElement.keyValuesMissing() || replaceKeys) {
-          KeyElement newKey = createSetAndGetKeys(object, replaceKeys);
-          return this.create(object, newKey);
-        }
-        dataStore.put(keyElement, object);
+  private T create(final T object, final KeyElement keyElement) throws DataStoreException {
+    synchronized (dataStore) {
+      final boolean replaceKeys = dataStore.containsKey(keyElement);
+      if (replaceKeys) {
+        dataStore.remove(keyElement);
+      } else if (keyElement.keyValuesMissing()) {
+        KeyElement newKey = createSetAndGetKeys(object);
+        return this.create(object, newKey);
       }
-      return object;
+      dataStore.put(keyElement, object);
     }
+    return object;
+  }
 
   @Override
   public T update(final T object) {
@@ -255,11 +257,11 @@ public class InMemoryDataStore<T> implements DataStore<T> {
       return keyElement;
     }
 
-    KeyElement createSetAndGetKeys(final T object, final boolean replaceKeys) {
+    KeyElement createSetAndGetKeys(final T object) {
       KeyElement keyElement = new KeyElement(keyFields.size());
         for (Field field : keyFields) {
           Object key = ClassHelper.getFieldValue(object, field);
-          if (key == null || replaceKeys) {
+          if (key == null) {
             key = createKey(field);
             ClassHelper.setFieldValue(object, field, key);
           }
@@ -291,7 +293,7 @@ public class InMemoryDataStore<T> implements DataStore<T> {
     return keyAccess.getKeyValues(object);
   }
 
-  private KeyElement createSetAndGetKeys(final T object, final boolean replaceKeys) throws DataStoreException {
-    return keyAccess.createSetAndGetKeys(object, replaceKeys);
+  private KeyElement createSetAndGetKeys(final T object) throws DataStoreException {
+    return keyAccess.createSetAndGetKeys(object);
   }
 }
