@@ -148,7 +148,7 @@ public class ExtensionProcessor<T extends ODataProcessor> {
       // XXX: change
       if (isValid(method)) {
         invokeMethod = method;
-        invokeParameters = Arrays.copyOf(objects, objects.length);
+        invokeParameters = objects != null ? Arrays.copyOf(objects, objects.length) : new Object[]{};
       } else {
         throw new RuntimeException("Invalid class '" + method.getDeclaringClass() +
             "' can not wrapped for asynchronous processing.");
