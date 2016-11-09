@@ -3,6 +3,10 @@
 This extension provides *Java Annotations* for defining the OData (V2) EDM and Interfaces (Hooks) for attaching generic data sources providing the data.
 The extension is based (forked) from the *Apache Olingo Annotation Processor* (see [Olingo Homepage](http://olingo.apache.org/doc/odata2/tutorials/AnnotationProcessorExtension.html) and [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22olingo-odata2-annotation-processor%22)).
 
+## Version with changes for Origin SAP Gateway Stub Server
+
+This branch `ChangesForStubServer` contains fixes and updates for Janos to be used with the Origin Energy SAP
+Gateway Stub Server.
 
 ## Current Features <small>(for stable version)</small>
 
